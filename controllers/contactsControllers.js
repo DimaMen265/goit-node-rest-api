@@ -1,13 +1,13 @@
-import contactsService from "../services/contactsServices.js";
-import HttpError from "../helpers/HttpError.js";
-import { createContactSchema, updateContactSchema } from "../schemas/contactsSchemas.js";
+const contactsService = require("../services/contactsServices.js");
+const HttpError = require("../helpers/HttpError.js");
+const { createContactSchema, updateContactSchema } = require("../schemas/contactsSchemas.js");
 
-export const getAllContacts = (req, res) => {
+const getAllContacts = (req, res) => {
     const result = contactsService.listContacts();
     res.status(200).json(result);
 };
 
-export const getOneContact = (req, res) => {
+const getOneContact = (req, res) => {
     const { id } = req.params;
     const result = contactsService.getContactById(id);
 
@@ -18,7 +18,7 @@ export const getOneContact = (req, res) => {
     res.status(200).json(result);
 };
 
-export const deleteContact = (req, res) => {
+const deleteContact = (req, res) => {
     const { id } = req.params;
     const result = contactsService.deleteContact(id);
 
@@ -29,7 +29,7 @@ export const deleteContact = (req, res) => {
     res.status(204).json(result);
 };
 
-export const createContact = (req, res) => {
+const createContact = (req, res) => {
     const { error } = createContactSchema.validate(req.body);
 
     if (error) {
@@ -41,7 +41,7 @@ export const createContact = (req, res) => {
     res.status(201).json(result);
 };
 
-export const updateContact = (req, res) => {
+const updateContact = (req, res) => {
     const { id } = req.params;
     const { error } = updateContactSchema.validate(req.body);
     const result = contactsService.updateContact(id, req.body);
@@ -59,4 +59,12 @@ export const updateContact = (req, res) => {
     };
 
     res.status(200).json(result);
+};
+
+module.exports = {
+    getAllContacts,
+    getOneContact,
+    deleteContact,
+    createContact,
+    updateContact,
 };
