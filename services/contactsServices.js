@@ -43,7 +43,7 @@ async function removeContact(contactId) {
 
 async function addContact(name, email, phone) {
     const array = await listContacts();
-    let contacts = array.find(contact => contact.email === email || name.email === name);
+    let contacts = array.find(contact => contact.email === email || contact.name === name);
 
     if (contacts !== undefined) {
         throw new Error("CONTACT_EXISTS");
