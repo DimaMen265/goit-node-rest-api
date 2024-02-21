@@ -12,7 +12,7 @@ const { validateId } = require("../helpers/validateId.js");
 const {
   createContactSchema,
   improveContactSchema,
-  patchSchema
+  improveStatusSchema
 } = require("../schemas/contactsSchemas.js")
 
 const contactsRouter = express.Router();
@@ -27,6 +27,6 @@ contactsRouter.post("/", validateBody(createContactSchema), createContact);
 
 contactsRouter.put("/:id", validateBody(improveContactSchema), improveContact);
 
-contactsRouter.patch("/:id/favorite", validateBody(patchSchema), improveStatus);
+contactsRouter.patch("/:id/favorite", validateBody(improveStatusSchema), improveStatus);
 
 module.exports = contactsRouter;

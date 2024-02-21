@@ -2,7 +2,7 @@ const { app } = require("./app");
 const { connectDB } = require("./api/mongoConnect");
 require("dotenv").config();
 
-const port = process.env.PORT
+const port = process.env.PORT;
 
 const startServer = async () => {
     try {

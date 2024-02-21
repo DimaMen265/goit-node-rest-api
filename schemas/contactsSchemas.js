@@ -12,7 +12,7 @@ const improveContactSchema = Joi.object({
     phone: Joi.string(),
 });
 
-const patchSchema = Joi.object({
+const improveStatusSchema = Joi.object({
     favorite: Joi.boolean().required()
         .messages({ "any.required": "missing field favorite" }),
 });
@@ -20,5 +20,5 @@ const patchSchema = Joi.object({
 module.exports = {
     createContactSchema,
     improveContactSchema,
-    patchSchema,
+    improveStatusSchema,
 };
