@@ -6,13 +6,19 @@ const createContactSchema = Joi.object({
     phone: Joi.string().required(),
 });
 
-const updateContactSchema = Joi.object({
+const improveContactSchema = Joi.object({
     name: Joi.string(),
     email: Joi.string().email({ minDomainSegments: 2 }),
     phone: Joi.string(),
 });
 
+const patchSchema = Joi.object({
+    favorite: Joi.boolean().required()
+        .messages({ "any.required": "missing field favorite" }),
+});
+
 module.exports = {
     createContactSchema,
-    updateContactSchema
+    improveContactSchema,
+    patchSchema,
 };
