@@ -1,52 +1,54 @@
 const contactsService = require("../services/contactsServices.js");
 const HttpError = require("../helpers/HttpError.js");
-const { createContactSchema, updateContactSchema } = require("../schemas/contactsSchemas.js");
+const { createContactSchema, improveContactSchema } = require("../schemas/contactsSchemas.js");
 
 const getAllContacts = (req, res) => {
-    const result = contactsService.listContacts();
-    res.status(200).json(result);
+    const contacts = contactsService.listContacts();
+    res.status(200).json(contacts);
 };
 
 const getOneContact = (req, res) => {
     const { id } = req.params;
-    const result = contactsService.getContactById(id);
+    const contact = contactsService.getContactById(id);
 
-    if (!result) {
+    if (!contact) {
         throw HttpError(404);
     };
 
-    res.status(200).json(result);
+    res.status(200).json(contact);
 };
 
-const deleteContact = (req, res) => {
+const removeContact = (req, res) => {
     const { id } = req.params;
-    const result = contactsService.deleteContact(id);
+    const removedContacts = contactsService.removeContact(id);
 
     if (!result) {
         throw HttpError(404);
     };
 
-    res.status(204).json(result);
+    res.status(204).json(removedContacts);
 };
 
 const createContact = (req, res) => {
-    const { error } = createContactSchema.validate(req.body);
+    const { name, email, phone } = req.body;
+    const { error } = createContactSchema.validate({ name, email, phone });
 
     if (error) {
         throw HttpError(400, error.message);
     };
 
-    const result = contactsService.addContact(req.body);
+    const newContact = contactsService.addContact(name, email, phone);
 
-    res.status(201).json(result);
+    res.status(201).json(newContact);
 };
 
-const updateContact = (req, res) => {
+const improveContact = (req, res) => {
     const { id } = req.params;
-    const { error } = updateContactSchema.validate(req.body);
-    const result = contactsService.updateContact(id, req.body);
+    const { name, email, phone } = req.body;
+    const { error } = improveContactSchema.validate({ name, email, phone });
+    const improvedContact = contactsService.updateContact(id, name, email, phone);
     
-    if (Object.keys(req.body).length === 0) {
+    if (!name && !email && !phone && Object.keys(req.body).length === 0) {
         throw HttpError(400, "Body must have at least one field");
     };
 
@@ -54,17 +56,34 @@ const updateContact = (req, res) => {
         throw HttpError(400, error.message);
     };
 
-    if (!result) {
+    if (!improvedContact) {
         throw HttpError(404);
     };
 
-    res.status(200).json(result);
+    res.status(200).json(improvedContact);
+};
+
+const improveStatus = (req, res) => {
+    const { id } = req.params;
+    const { favorite } = req.body;
+    const improvedStatus = contactsService.updateStatus(id, favorite);
+
+    if (typeof favorite !== "boolean") {
+        throw HttpError(400, "Favorite must be a boolean value");
+    };
+
+    if (!improvedStatus) {
+        throw HttpError(404);
+    };
+
+    res.status(200).json(improvedStatus);
 };
 
 module.exports = {
     getAllContacts,
     getOneContact,
-    deleteContact,
+    removeContact,
     createContact,
-    updateContact,
+    improveContact,
+    improveStatus,
 };
