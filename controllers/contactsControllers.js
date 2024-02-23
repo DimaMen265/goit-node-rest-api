@@ -21,7 +21,7 @@ const removeContact = (req, res) => {
     const { id } = req.params;
     const removedContacts = contactsService.deleteContact(id);
 
-    if (!result) {
+    if (!removedContacts) {
         throw HttpError(404);
     };
 
