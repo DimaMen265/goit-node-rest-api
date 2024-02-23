@@ -19,7 +19,7 @@ const getOneContact = (req, res) => {
 
 const removeContact = (req, res) => {
     const { id } = req.params;
-    const removedContacts = contactsService.removeContact(id);
+    const removedContacts = contactsService.deleteContact(id);
 
     if (!result) {
         throw HttpError(404);
