@@ -2,31 +2,57 @@ const express = require("express");
 const {
   getAllContacts,
   getOneContact,
-  removeContact,
+  deleteContact,
   createContact,
-  improveContact,
-  improveStatus,
-} = require("../controllers/contactsControllers.js");
-const { validateBody } = require("../helpers/validateBody.js");
-const { validateId } = require("../helpers/validateId.js");
+  updateContact,
+  updateFavorite,
+} = require("../controllers/contactsControllers");
+const { validateBody } = require("../middlewars/validateBody");
+const { validateId } = require("../middlewars/validateId");
+const { validateJWT } = require("../middlewars/validateJWT");
 const {
   createContactSchema,
-  improveContactSchema,
-  improveStatusSchema
-} = require("../schemas/contactsSchemas.js")
+  updateContactSchema,
+  updateFavoriteSchema,
+} = require("../schemas/contactsSchemas")
 
 const contactsRouter = express.Router();
 
-contactsRouter.get("/", getAllContacts);
+contactsRouter.get("/", validateJWT, getAllContacts);
 
-contactsRouter.get("/:id", getOneContact);
+contactsRouter.get(
+  "/:id",
+  validateJWT,
+  validateId,
+  getOneContact
+);
 
-contactsRouter.delete("/:id", validateId, removeContact);
+contactsRouter.delete(
+  "/:id",
+  validateJWT,
+  validateId,
+  deleteContact
+);
 
-contactsRouter.post("/", validateBody(createContactSchema), createContact);
+contactsRouter.post(
+  "/",
+  validateJWT,
+  validateBody(createContactSchema),
+  createContact
+);
 
-contactsRouter.put("/:id", validateBody(improveContactSchema), improveContact);
+contactsRouter.put(
+  "/:id",
+  validateJWT,
+  validateBody(updateContactSchema),
+  updateContact
+);
 
-contactsRouter.patch("/:id/favorite", validateBody(improveStatusSchema), improveStatus);
+contactsRouter.patch(
+  "/:id/favorite",
+  validateJWT,
+  validateBody(updateFavoriteSchema),
+  updateFavorite
+);
 
 module.exports = contactsRouter;
