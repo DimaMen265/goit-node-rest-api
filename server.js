@@ -1,6 +1,6 @@
 const { app } = require("./app");
-const { connectDB } = require("./api/mongoConnect");
-require("dotenv").config();
+const { connectDB } = require("./db/connectDB");
+// require("dotenv").config();
 
 const port = process.env.PORT;
 

@@ -1,14 +1,23 @@
-const contactsService = require("../services/contactsServices.js");
-const HttpError = require("../helpers/HttpError.js");
+const { Contact } = require("../models/contact");
+const HttpError = require("../helpers/HttpError");
 
-const getAllContacts = (req, res) => {
-    const contacts = contactsService.listContacts();
+const getAllContacts = async (req, res) => {
+    const { _id: owner } = req.user;
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+    const contacts = await Contact.find({ owner }, "", {
+        skip,
+        limit: Number(limit),
+    }).populate("owner", "name", "email");
     res.status(200).json(contacts);
 };
 
-const getOneContact = (req, res) => {
+const getOneContact = async (req, res) => {
     const { id } = req.params;
-    const contact = contactsService.getContactById(id);
+    const { _id: owner } = req.user;
+    const contact = await Contact.findOne({ _id: id })
+        .where("owner")
+        .equals(owner);
 
     if (!contact) {
         throw HttpError(404);
@@ -17,62 +26,65 @@ const getOneContact = (req, res) => {
     res.status(200).json(contact);
 };
 
-const removeContact = (req, res) => {
+const deleteContact = async (req, res) => {
     const { id } = req.params;
-    const removedContacts = contactsService.deleteContact(id);
+    const { _id: owner } = req.user;
+    const deletedContacts = await Contact.findByIdAndDelete({ _id: id })
+        .where("owner")
+        .equals(owner);
 
-    if (!removedContacts) {
+    if (!deletedContacts) {
         throw HttpError(404);
     };
 
-    res.status(204).json(removedContacts);
+    res.status(204).json(deletedContacts);
 };
 
-const createContact = (req, res) => {
-    const { name, email, phone } = req.body;
-
-    const newContact = contactsService.addContact(name, email, phone);
+const createContact = async (req, res) => {
+    const { _id: owner } = req.user;
+    const newContact = await Contact.create({ ...req.body, owner });
 
     res.status(201).json(newContact);
 };
 
-const improveContact = (req, res) => {
+const updateContact = async (req, res) => {
     const { id } = req.params;
-    const { name, email, phone } = req.body;
-    const improvedContact = contactsService.updateContact(id, name, email, phone);
+    const { _id: owner } = req.user;
+    const updatedContact = await Contact.findByIdAndUpdate({ _id: id }, req.body, { new: true })
+        .where("owner")
+        .equals(owner);
     
-    if (!name && !email && !phone && Object.keys(req.body).length === 0) {
-        throw HttpError(400, "Body must have at least one field");
-    };
-
-    if (!improvedContact) {
+    if (!updatedContact) {
         throw HttpError(404);
     };
 
-    res.status(200).json(improvedContact);
+    res.status(200).json(updatedContact);
 };
 
-const improveStatus = (req, res) => {
+const updateFavorite = async (req, res) => {
     const { id } = req.params;
+    const { _id: owner } = req.user;
     const { favorite } = req.body;
-    const improvedStatus = contactsService.updateStatus(id, favorite);
+    const updatedFavorite = await Contact.findByIdAndUpdate(
+        { _id: id },
+        { favorite },
+        { new: true }
+    )
+        .where("owner")
+        .equals(owner);
 
-    if (typeof favorite !== "boolean") {
-        throw HttpError(400, "Favorite must be a boolean value");
-    };
-
-    if (!improvedStatus) {
+    if (!updatedFavorite) {
         throw HttpError(404);
     };
 
-    res.status(200).json(improvedStatus);
+    res.status(200).json(updateFavorite);
 };
 
 module.exports = {
     getAllContacts,
     getOneContact,
-    removeContact,
+    deleteContact,
     createContact,
-    improveContact,
-    improveStatus,
+    updateContact,
+    updateFavorite,
 };
