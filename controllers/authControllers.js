@@ -82,10 +82,6 @@ const updateSubscription = async (req, res) => {
         throw HttpError(404);
     };
 
-    if (updatedSubscription.token === null) {
-        throw HttpError(401);
-    };
-
     res.status(200).json({
         email: updatedSubscription.email,
         subscription: updatedSubscription.subscription,
