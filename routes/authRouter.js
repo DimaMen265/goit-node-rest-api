@@ -6,6 +6,8 @@ const {
     logout,
     updateSubscription,
     updateAvatar,
+    verifyEmail,
+    resendVerifyEmail,
 } = require("../controllers/authControllers");
 const { validateBody } = require("../middlewars/validateBody");
 const { validateJWT } = require("../middlewars/validateJWT");
@@ -14,6 +16,7 @@ const {
     registerSchema,
     loginSchema,
     updateSubscriptionSchema,
+    verificationEmailSchema,
 } = require("../schemas/userSchema");
 
 const authRouter = express.Router();
@@ -54,6 +57,14 @@ authRouter.patch(
     validateJWT,
     upload.single("avatar"),
     updateAvatar
+);
+
+authRouter.get("/verify/:verificationToken", verifyEmail);
+
+authRouter.post(
+    "/verify",
+    validateBody(verificationEmailSchema),
+    resendVerifyEmail
 );
 
 module.exports = authRouter;
