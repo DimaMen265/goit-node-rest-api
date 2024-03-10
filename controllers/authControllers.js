@@ -13,180 +13,245 @@ require("dotenv").config();
 const { SECRET_KEY } = process.env;
 
 const register = async (req, res) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (user) {
-        throw HttpError(409, "Email in use");
-    };
-
-    const avatarURL = gravatar.url(email);
-    const hashPassword = await bcrypt.hash(password, 10);
-    const verificationToken = randomUUID();
-    const newUser = await User.create({
-        ...req.body,
-        password: hashPassword,
-        avatarURL,
-        verificationToken,
-    });
-
-    const mail = {
-        to: email,
-        subject: "Verify email",
-        html: `<a target="_blank" href="http://localhost:3000/users/register/verify/${verificationToken}">Verify email</a>`,
-    };
-
     try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        
+        if (user) {
+            throw HttpError(409, "Email in use");
+        };
+        
+        const avatarURL = gravatar.url(email);
+        const hashPassword = await bcrypt.hash(password, 10);
+        const verificationToken = randomUUID();
+        const newUser = await User.create({
+            ...req.body,
+            password: hashPassword,
+            avatarURL,
+            verificationToken,
+        });
+
+        const mail = {
+            to: email,
+            subject: "Verify email",
+            html: `<a target="_blank" href="http://localhost:3000/users/register/verify/${verificationToken}">Verify email</a>`,
+        };
+
         await sendEmail(mail);
-        res.status(201).json({ message: "Verification email sent" });
+        res.status(201).json({
+            email: newUser.email,
+            subscription: newUser.subscription,
+            avatarURL: newUser.avatarURL,
+            message: "Verification email sent",
+        });
     } catch (error) {
-        res.status(500).json(error.message);
+        if (error.status) {
+            res.status(error.status).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: "Internal Server Error" });
+        };
     };
 };
 
 const login = async (req, res) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    const passwordCompare = await bcrypt.compare(password, user.password);
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        const passwordCompare = await bcrypt.compare(password, user.password);
 
-    if (!user || !passwordCompare) {
-        throw HttpError(401, "Email or password is wrong");
-    };
+        if (!user || !passwordCompare) {
+            throw HttpError(401, "Email or password is wrong");
+        };
 
-    if (!user.verify) {
-        throw HttpError(401, "Email not verified. Access denied");
-    };
+        if (!user.verify) {
+            throw HttpError(401, "Email not verified. Access denied");
+        };
 
-    const payload = {
-        id: user._id,
-        email: user.email,
-    };
-
-    const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
-    
-    await User.findByIdAndUpdate(user._id, { token });
-    res.status(201).json({
-        token,
-        user: {
+        const payload = {
+            id: user._id,
             email: user.email,
-            subscription: user.subscription,
-        },
-    });
+        };
+
+        const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
+    
+        await User.findByIdAndUpdate(user._id, { token });
+        res.status(201).json({
+            token,
+            user: {
+                email: user.email,
+                subscription: user.subscription,
+            },
+        });
+    } catch (error) {
+        if (error.status) {
+            res.status(error.status).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: "Internal Server Error" });
+        };
+    };
 };
 
 const getCurrent = async (req, res) => {
-    const { token, email, subscription, avatarURL } = req.user;
+    try {
+        const { token, email, subscription, avatarURL } = req.user;
 
-    if (!token) {
-        throw HttpError(401);
+        if (!token) {
+            throw HttpError(401);
+        };
+
+        res.status(201).json({
+            email,
+            subscription,
+            avatarURL,
+        });
+    } catch (error) {
+        if (error.status) {
+            res.status(error.status).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: "Internal Server Error" });
+        };
     };
-
-    res.status(201).json({
-        email,
-        subscription,
-        avatarURL,
-    });
 };
 
 const logout = async (req, res) => {
-    const { _id } = req.user;
+    try {
+        const { _id } = req.user;
 
-    await User.findByIdAndUpdate(_id, { token: "" });
-    res.status(204).json({
-        message: "Logout success. Content not found",
-    });
+        await User.findByIdAndUpdate(_id, { token: "" });
+        res.status(204).json({
+            message: "Logout success. Content not found",
+        });
+    } catch (error) {
+        if (error.status) {
+            res.status(error.status).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: "Internal Server Error" });
+        };
+    };
 };
 
 const updateSubscription = async (req, res) => {
-    const { _id } = req.user;
-    const { subscription } = req.body;
-    const updatedSubscription = await User.findByIdAndUpdate(
-        _id,
-        { subscription },
-        { new: true }
-    );
+    try {
+        const { _id } = req.user;
+        const { subscription } = req.body;
+        const updatedSubscription = await User.findByIdAndUpdate(
+            _id,
+            { subscription },
+            { new: true }
+        );
 
-    if (!updatedSubscription) {
-        throw HttpError(404);
+        if (!updatedSubscription) {
+            throw HttpError(404);
+        };
+
+        res.status(200).json({
+            email: updatedSubscription.email,
+            subscription: updatedSubscription.subscription,
+        });
+    } catch (error) {
+        if (error.status) {
+            res.status(error.status).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: "Internal Server Error" });
+        };
     };
-
-    res.status(200).json({
-        email: updatedSubscription.email,
-        subscription: updatedSubscription.subscription,
-    });
 };
 
 const updateAvatar = async (req, res) => {
-    const { _id } = req.user;
-    
-    if (!req.file) {
-        throw HttpError(400, "File not uploaded");
-    };
-
-    const { path: tempUpload, originalname } = req.file;
-    const filename = `${_id}_${originalname}`;
-    const resultUpload = path.join("public", "avatars", filename);
-    const img = await Jimp.read(tempUpload);
-    await img.resize(250, 250).writeAsync(tempUpload);
-
     try {
-        await fs.rename(tempUpload, resultUpload);
-    } catch (error) {
-        await fs.unlink(tempUpload);
-        console.log(error);
-    };
-
-    const avatarURL = path.join("avatars", filename);
-    const updatedAvatar = await User.findByIdAndUpdate(_id, { avatarURL });
+        const { _id } = req.user;
     
-    if (!updatedAvatar) {
-        throw HttpError(404);
-    };
+        if (!req.file) {
+            throw HttpError(400, "File not uploaded");
+        };
 
-    res.status(200).json({ avatarURL });
+        const { path: tempUpload, originalname } = req.file;
+        const filename = `${_id}_${originalname}`;
+        const resultUpload = path.join("public", "avatars", filename);
+        const img = await Jimp.read(tempUpload);
+        await img.resize(250, 250).writeAsync(tempUpload);
+
+        try {
+            await fs.rename(tempUpload, resultUpload);
+        } catch (error) {
+            await fs.unlink(tempUpload);
+            console.log(error);
+        };
+
+        const avatarURL = path.join("avatars", filename);
+        const updatedAvatar = await User.findByIdAndUpdate(_id, { avatarURL });
+    
+        if (!updatedAvatar) {
+            throw HttpError(404);
+        };
+
+        res.status(200).json({ avatarURL });
+    } catch (error) {
+        if (error.status) {
+            res.status(error.status).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: "Internal Server Error" });
+        };
+    };
 };
 
 const verifyEmail = async (req, res) => {
-    const { verificationToken } = req.params;
-    const user = await User.findOne({ verificationToken });
+    try {
+        const { verificationToken } = req.params;
+        const user = await User.findOne({ verificationToken });
 
-    if (!user) {
-        throw HttpError(404);
+        if (!user) {
+            throw HttpError(404);
+        };
+
+        await User.findByIdAndUpdate(user._id, {
+            verify: true,
+            verificationToken: null,
+        });
+
+        res.status(200).json({ message: "Verification successful" });
+    } catch (error) {
+        if (error.status) {
+            res.status(error.status).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: "Internal Server Error" });
+        };
     };
-
-    await User.findByIdAndUpdate(user._id, {
-        verify: true,
-        verificationToken: null,
-    });
-
-    res.status(200).json({ message: "Verification successful" });
 };
 
 const resendVerifyEmail = async (req, res) => {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
 
-    if (!email) {
-        throw HttpError(400, "Missing required field email");
-    };
+        if (!email) {
+            throw HttpError(400, "Missing required field email");
+        };
 
-    if (!user) {
-        throw HttpError(404);
-    };
+        if (!user) {
+            throw HttpError(404);
+        };
 
-    if (user.verify) {
-        throw HttpError(400, "Verification has already been passed");
-    };
+        if (user.verify) {
+            throw HttpError(400, "Verification has already been passed");
+        };
 
-    const verifyEmail = {
-        to: email,
-        subject: "Verify your email",
-        html: `<a target="_blank" href="http://localhost:3000/users/verify/${user.verificationToken}">Verify email</a>`,
-    };
+        const verifyEmail = {
+            to: email,
+            subject: "Verify your email",
+            html: `<a target="_blank" href="http://localhost:3000/users/verify/${user.verificationToken}">Verify email</a>`,
+        };
 
-    await sendEmail(verifyEmail);
+        await sendEmail(verifyEmail);
 
-    res.status(200).json({ message: "Verification email sent" });
+        res.status(200).json({ message: "Verification email sent" });
+    } catch (error) {
+        if (error.status) {
+            res.status(error.status).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: "Internal Server Error" });
+        };
+    }
 };
 
 module.exports = {
